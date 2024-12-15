@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolov5-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yolov5
+  template:
+    metadata:
+      labels:
+        app: yolov5
+    spec:
+      containers:
+      - name: yolov5
+        image: moisesca/yolov5:latest
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yolov5-service
+spec:
+  selector:
+    app: yolov5
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer

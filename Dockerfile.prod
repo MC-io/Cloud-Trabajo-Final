@@ -1,0 +1,19 @@
+FROM python:3.12-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /code
+RUN apt-get update && apt-get install \
+    ffmpeg \
+    libsm6 \
+    libxext6  -y
+RUN pip install flask opencv-python && \
+    pip install torch==2.2.0+cpu torchvision==0.17.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
+COPY server.py /code/
+COPY yolov5s.pt /code/
+
+EXPOSE 5000
+
+CMD ["python3", "server.py"]
