@@ -18,7 +18,7 @@ def upload_file_to_gcs(bucket_name, source_file_path, destination_blob_name):
         blob = bucket.blob(destination_blob_name)
 
         # Upload the file to GCS
-        blob.upload_from_string(source_file_path, content_type='image/jpeg')
+        blob.upload_from_filename(source_file_path, content_type='image/jpeg')
 
         print(f"File uploaded to {destination_blob_name}.")
 

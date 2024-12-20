@@ -35,84 +35,76 @@ def acknowledge_all_messages():
     else:
         print('No messages to acknowledge.')
 
+
+
+
 def extract_frames(video_path, key, output_folder, interval=0.5):
-    # Create output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
-    # Open video file
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print("Error: Unable to open video file.")
         return
 
-    # Get video properties
     fps = cap.get(cv2.CAP_PROP_FPS)  # Frames per second
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     duration = total_frames / fps  # Duration of the video in seconds
     
     print(f"Video duration: {duration:.2f}s, FPS: {fps:.2f}, Total Frames: {total_frames}")
     
-    frame_interval = int(fps * interval)  # Number of frames between each capture
-    start_time = time.time()  # Record the start time
+    frame_interval = int(fps * interval)  # Number of frames between each capture    
     
     frame_idx = 0
-    saved_frame_count = 0
     
     while True:
-        # Calculate the target time for the next frame
-        target_time = start_time + saved_frame_count * interval
-        
-        # Wait until the target time
-        current_time = time.time()
-        if current_time < target_time:
-            print("In time")
-            time.sleep(target_time - current_time)
-        else:
-            print("Not in time")
-        # Set the video to the desired frame
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
         ret, frame = cap.read()
         if not ret:
             print("End of video reached.")
             break
-        is_success, img_encoded = cv2.imencode('.jpg', frame)
-        img_bytes = img_encoded.tobytes()
         # Save the frame
-        # output_file = os.path.join(output_folder, f"{key}.jpg")
-        # cv2.imwrite(output_file, frame)
-        # print(f"Saved: {output_file}")
-        # form_data = {
-        # }
+        output_file = os.path.join(output_folder, f"{key}-{frame_idx}.jpg")
+        cv2.imwrite(output_file, frame)
+        print(f"Saved: {output_file}")
 
-        bucket_name = 'camera-frames'
-
-        # with open(output_file, "rb") as file:
-
-        upload_file_to_gcs(bucket_name, img_bytes, f"frames/{key}.jpg")
-
-        data = key.encode("utf-8")
-
-        # Publish the message
-        future = publisher.publish(topic_path, data)
-        print(f"Published message ID: {future.result()}")
-        # Prepare the files dictionary
-        # files = {
-        #    "file": file  # Replace 'file_field_name' with the actual field name expected by the server
-        #}
-
-        # Make the POST request
-        # response = requests.post("http://34.176.44.132/predict", data=form_data, files=files)
-
-        
-        saved_frame_count += 1
         frame_idx += frame_interval
         
-        # Stop if we've processed all frames
         if frame_idx >= total_frames:
             break
     
     cap.release()
     print("Frame extraction completed.")
 
+    return key, frame_interval, total_frames
+
+
+
+def post_frames(frames, key, frame_interval, total_frames, interval=0.5):
+    start_time = time.time()  # Record the start time
+    
+    frame_idx = 0
+    saved_frame_count = 0
+    bucket_name = 'camera-frames'
+    while frame_idx < total_frames:
+        target_time = start_time + saved_frame_count * interval
+        
+        current_time = time.time()
+        if current_time < target_time:
+            # print("In time")
+            time.sleep(target_time - current_time)
+
+        output_file = os.path.join(frames, f"{key}-{frame_idx}.jpg")
+
+        upload_file_to_gcs(bucket_name, output_file, f"frames/{key}.jpg")
+
+        data = key.encode("utf-8")
+
+        # Publish the message
+        future = publisher.publish(topic_path, data)
+        # print(f"Published message ID: {future.result()}")
+
+        saved_frame_count += 1
+        frame_idx += frame_interval
+        
 # Example usage
 
 # video_file = "VIRAT-DATASET/VIRAT_S_000200_00_000100_000171.mp4"
@@ -127,7 +119,16 @@ videos = {
     "video3": "VIRAT-DATASET/VIRAT_S_000205_00_000065_000149.mp4",
 }
 
+frames_interval_dict = dict()
+total_frames_dict = dict()
+
 with ThreadPoolExecutor(max_workers=8) as executor:
     futures = [executor.submit(extract_frames, filename, key, "frames", 0.5) for key, filename in videos.items()]
+    for future in as_completed(futures):
+        key, frames_interval, total_frames = future.result()
+        frames_interval_dict[key] = frames_interval
+        total_frames_dict[key] = total_frames
+
+    futures = [executor.submit(post_frames, "frames", key, frames_interval_dict[key], total_frames_dict[key],  1.0) for key, filename in videos.items()]
     for future in as_completed(futures):
         future.result()
