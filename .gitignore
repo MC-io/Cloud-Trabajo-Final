@@ -5,3 +5,4 @@ __pycache__/
 yolov5s.pt
 yolov8n.pt
 god-eyes*
+firestore.json

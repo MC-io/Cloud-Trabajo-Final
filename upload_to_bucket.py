@@ -20,7 +20,10 @@ def upload_file_to_gcs(bucket_name, source_file_path, destination_blob_name):
         # Upload the file to GCS
         blob.upload_from_filename(source_file_path, content_type='image/jpeg')
 
+
         print(f"File uploaded to {destination_blob_name}.")
+        return f"https://storage.googleapis.com/{bucket_name}/{destination_blob_name}"
+
 
     except Exception as e:
         print(f"An error occurred: {e}")

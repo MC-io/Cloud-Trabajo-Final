@@ -1,4 +1,5 @@
 import cv2
+import json
 import time
 import os
 import requests
@@ -86,21 +87,30 @@ def post_frames(frames, key, frame_interval, total_frames, interval=0.5):
     bucket_name = 'camera-frames'
     while frame_idx < total_frames:
         target_time = start_time + saved_frame_count * interval
-        
         current_time = time.time()
         if current_time < target_time:
-            # print("In time")
             time.sleep(target_time - current_time)
 
+
         output_file = os.path.join(frames, f"{key}-{frame_idx}.jpg")
+        public_file_url = upload_file_to_gcs(bucket_name, output_file, f"frames/{key}-{frame_idx}.jpg")
 
-        upload_file_to_gcs(bucket_name, output_file, f"frames/{key}.jpg")
 
-        data = key.encode("utf-8")
+        payload = {
+            "name": key,
+            "url": public_file_url,
+            "timestamp": frame_idx,
+        }
+        url = "http://127.0.0.1:5000/predict"
+        response = requests.post(url, json=payload)
 
-        # Publish the message
+        response_data = response.json()
+        json_string = json.dumps(response_data)
+
+
+        data = json_string.encode("utf-8")
         future = publisher.publish(topic_path, data)
-        # print(f"Published message ID: {future.result()}")
+        print(f"Published message ID: {future.result()}")
 
         saved_frame_count += 1
         frame_idx += frame_interval
@@ -123,12 +133,12 @@ frames_interval_dict = dict()
 total_frames_dict = dict()
 
 with ThreadPoolExecutor(max_workers=8) as executor:
-    futures = [executor.submit(extract_frames, filename, key, "frames", 0.5) for key, filename in videos.items()]
+    futures = [executor.submit(extract_frames, filename, key, "frames", 3.0) for key, filename in videos.items()]
     for future in as_completed(futures):
         key, frames_interval, total_frames = future.result()
         frames_interval_dict[key] = frames_interval
         total_frames_dict[key] = total_frames
 
-    futures = [executor.submit(post_frames, "frames", key, frames_interval_dict[key], total_frames_dict[key],  1.0) for key, filename in videos.items()]
+    futures = [executor.submit(post_frames, "frames", key, frames_interval_dict[key], total_frames_dict[key],  3.0) for key, filename in videos.items()]
     for future in as_completed(futures):
         future.result()

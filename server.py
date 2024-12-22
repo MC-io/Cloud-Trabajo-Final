@@ -48,7 +48,8 @@ def predict():
     return jsonify({
         "message": "Inference complete",
         "detections": detections_dict
-    }), 200 
+    }), 200
+
 
 # Run the Flask app
 if __name__ == "__main__":
