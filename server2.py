@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import requests
 import torch
 from pathlib import Path
@@ -7,7 +8,7 @@ from google.cloud import firestore
 
 # Initialize Flask app
 app = Flask(__name__)
-
+CORS(app, origins="*")
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5s.pt')
 
 @app.route('/predict', methods=['POST'])

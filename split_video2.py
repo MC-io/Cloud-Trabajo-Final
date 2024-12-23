@@ -133,12 +133,12 @@ frames_interval_dict = dict()
 total_frames_dict = dict()
 
 with ThreadPoolExecutor(max_workers=8) as executor:
-    futures = [executor.submit(extract_frames, filename, key, "frames", 3.0) for key, filename in videos.items()]
+    futures = [executor.submit(extract_frames, filename, key, "frames", 1.0) for key, filename in videos.items()]
     for future in as_completed(futures):
         key, frames_interval, total_frames = future.result()
         frames_interval_dict[key] = frames_interval
         total_frames_dict[key] = total_frames
 
-    futures = [executor.submit(post_frames, "frames", key, frames_interval_dict[key], total_frames_dict[key],  3.0) for key, filename in videos.items()]
+    futures = [executor.submit(post_frames, "frames", key, frames_interval_dict[key], total_frames_dict[key],  1.0) for key, filename in videos.items()]
     for future in as_completed(futures):
         future.result()
