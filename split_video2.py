@@ -101,7 +101,7 @@ def post_frames(frames, key, frame_interval, total_frames, interval=0.5):
             "url": public_file_url,
             "timestamp": frame_idx,
         }
-        url = "http://34.41.128.162/predict"
+        url = "http://34.28.167.34/predict"
         response = requests.post(url, json=payload)
 
         response_data = response.json()
@@ -124,21 +124,23 @@ acknowledge_all_messages()
 
 
 videos = {
-    "video1": "VIRAT-DATASET/VIRAT_S_000200_00_000100_000171.mp4",
-    "video2": "VIRAT-DATASET/VIRAT_S_000201_02_000590_000623.mp4",
-    "video3": "VIRAT-DATASET/VIRAT_S_000205_00_000065_000149.mp4",
+    "video1": "VIRAT-DATASET/VIRAT_S_010003_03_000219_000259.mp4",
+    "video2": "VIRAT-DATASET/VIRAT_S_010204_04_000646_000754.mp4",
+    "video3": "VIRAT-DATASET/VIRAT_S_040000_08_001084_001190.mp4",
+    "video4": "VIRAT-DATASET/VIRAT_S_040103_01_000132_000195.mp4",
+    "video5": "VIRAT-DATASET/VIRAT_S_050000_08_001235_001295.mp4",
 }
 
 frames_interval_dict = dict()
 total_frames_dict = dict()
 
 with ThreadPoolExecutor(max_workers=8) as executor:
-    futures = [executor.submit(extract_frames, filename, key, "frames", 1.0) for key, filename in videos.items()]
+    futures = [executor.submit(extract_frames, filename, key, "frames", 5.0) for key, filename in videos.items()]
     for future in as_completed(futures):
         key, frames_interval, total_frames = future.result()
         frames_interval_dict[key] = frames_interval
         total_frames_dict[key] = total_frames
 
-    futures = [executor.submit(post_frames, "frames", key, frames_interval_dict[key], total_frames_dict[key],  1.0) for key, filename in videos.items()]
+    futures = [executor.submit(post_frames, "frames", key, frames_interval_dict[key], total_frames_dict[key],  5.0) for key, filename in videos.items()]
     for future in as_completed(futures):
         future.result()
