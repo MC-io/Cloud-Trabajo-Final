@@ -45,7 +45,7 @@ def predict():
                 "x_min": float(row['xmin']),
                 "y_min": float(row['ymin']),
                 "x_max": float(row['xmax']),
-                "y_max": float(row['ymin'])
+                "y_max": float(row['ymax'])
             }
         }
         metadata.append(mtd)

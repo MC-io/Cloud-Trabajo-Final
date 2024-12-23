@@ -101,7 +101,7 @@ def post_frames(frames, key, frame_interval, total_frames, interval=0.5):
             "url": public_file_url,
             "timestamp": frame_idx,
         }
-        url = "http://127.0.0.1:5000/predict"
+        url = "http://34.41.128.162//predict"
         response = requests.post(url, json=payload)
 
         response_data = response.json()
